@@ -45,7 +45,21 @@ const PizzaCanvas: React.FC = () => {
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', updateGravity);
     updateGravity();
-    
+
+    // ✅ 기울기 감지
+    const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
+      const gamma = e.gamma ?? 0; // 좌우
+      const beta = e.beta ?? 0; // 앞뒤
+
+      // 기울기를 정규화해서 x, y 중력 방향 계산
+      const x = Math.max(-90, Math.min(90, gamma)) / 90;
+      const y = Math.max(-90, Math.min(90, beta)) / 90;
+
+      gravityRef.current = { x: x * 0.8, y: y * 0.8 };
+    };
+
+    window.addEventListener('deviceorientation', handleDeviceOrientation);
+
     if (hasMounted.current) return;
     hasMounted.current = true;
 
@@ -121,6 +135,7 @@ const PizzaCanvas: React.FC = () => {
     return () => {
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('orientationchange', updateGravity);
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
   }, []);
 
