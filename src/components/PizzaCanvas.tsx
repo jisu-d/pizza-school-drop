@@ -1,26 +1,41 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pizza } from '../classes/Pizza';
+import Pizza from '../classes/Pizza';
+import { Pizza as PizzaType } from '../types/Pizza';
 import { handleCollisions } from '../utils/handleCollisions';
 
-const GRAVITY = 0.25;
 const BOUNCE = 0.99;
 const FRICTION = 0.995;
 
 const PizzaCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pizzasRef = useRef<Pizza[]>([]);
+  const gravityRef = useRef({ x: 0, y: 0 });
   const [grabbedIndex, setGrabbedIndex] = useState<number | null>(null);
-  const mouse = useRef({ x: 0, y: 0 });
   const hasMounted = useRef(false);
+  const mouse = useRef({ x: 0, y: 0 });
   const logoInfo = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
   const imageModules = import.meta.glob('../assets/pizza_imgs/*.{png,jpg,jpeg}', {
     eager: true,
   }) as Record<string, { default: string }>;
 
+  const imageUrls = Object.values(imageModules).map((mod) => mod.default);
+
+  const updateGravity = () => {
+    if (window.screen.orientation) {
+      const angle = window.screen.orientation.angle;
+      if (angle === 0) gravityRef.current = { x: 0, y: 0.25 };
+      else if (angle === 90) gravityRef.current = { x: -0.25, y: 0 };
+      else if (angle === 180) gravityRef.current = { x: 0, y: -0.25 };
+      else if (angle === 270) gravityRef.current = { x: 0.25, y: 0 };
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
+    const logoImg = new Image();
+    logoImg.src = '/pizza_school_logo.png';
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -29,75 +44,64 @@ const PizzaCanvas: React.FC = () => {
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-
+    window.addEventListener('orientationchange', updateGravity);
+    updateGravity();
+    
     if (hasMounted.current) return;
     hasMounted.current = true;
 
-    const logoImg = new Image();
-    logoImg.src = '/pizza_school_logo.png';
-
-    const imageUrls = Object.values(imageModules).map((mod) => mod.default);
-
-    const loadImages = async () => {
-      const promises = imageUrls.map(
-        (src) =>
-          new Promise<void>((resolve) => {
-            const img = new Image();
-            img.src = src;
-            img.onload = () => {
-              pizzasRef.current.push(
-                new Pizza(
-                  Math.random() * (canvas.width - 100) + 50,
-                  Math.random() * (canvas.height / 2),
-                  Math.random() * 4 - 2,
-                  Math.random() * 2,
-                  40,
-                  img
-                )
-              );
-              resolve();
-            };
-            img.onerror = () => {
-              console.error(`Failed to load image: ${src}`);
-              resolve();
-            };
-          })
-      );
-      await Promise.all(promises);
-    };
-
-    logoImg.onload = () => {
-      loadImages().then(() => {
-        const animate = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          const logoWidth = logoImg.width * 0.3;
-          const logoHeight = logoImg.height * 0.3;
-          const logoX = (canvas.width - logoWidth) / 2;
-          const logoY = (canvas.height - logoHeight) / 2 - 50;
-
-          logoInfo.current = { x: logoX, y: logoY, width: logoWidth, height: logoHeight };
-          ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
-
-          ctx.font = '10px Arial';
-          ctx.fillStyle = 'black';
-          ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
-
-          pizzasRef.current.forEach((pizza) => {
-            pizza.update(canvas.width, canvas.height, GRAVITY, BOUNCE, FRICTION, mouse.current);
-            pizza.draw(ctx);
-          });
-
-          handleCollisions(pizzasRef.current);
-
-          requestAnimationFrame(animate);
+    const loadPizzas = () => {
+      imageUrls.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+          pizzasRef.current.push(
+            new Pizza(
+              Math.random() * (canvas.width - 100) + 50,
+              Math.random() * (canvas.height / 2),
+              Math.random() * 4 - 2,
+              Math.random() * 2,
+              img
+            )
+          );
         };
-
-        animate();
       });
     };
 
-    canvas.addEventListener('click', (e: MouseEvent) => {
+    logoImg.onload = () => {
+      loadPizzas();
+
+      const animate = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const logoWidth = logoImg.width * 0.3;
+        const logoHeight = logoImg.height * 0.3;
+        const logoX = (canvas.width - logoWidth) / 2;
+        const logoY = (canvas.height - logoHeight) / 2 - 50;
+
+        logoInfo.current = { x: logoX, y: logoY, width: logoWidth, height: logoHeight };
+        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        ctx.fillStyle = 'black';
+        ctx.font = '10px Arial';
+        ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
+
+        pizzasRef.current.forEach((pizza) => {
+          if (pizza.grabbed) {
+            pizza.setPosition(mouse.current.x, mouse.current.y);
+          } else {
+            pizza.update(gravityRef.current, canvas.width, canvas.height, BOUNCE, FRICTION);
+          }
+          pizza.draw(ctx);
+        });
+
+        handleCollisions(pizzasRef.current);
+        requestAnimationFrame(animate);
+      };
+
+      animate();
+    };
+
+    canvas.addEventListener('click', (e) => {
       const { x, y, width, height } = logoInfo.current;
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
@@ -109,14 +113,7 @@ const PizzaCanvas: React.FC = () => {
         newImg.src = imageUrls[randomIndex];
         newImg.onload = () => {
           pizzasRef.current.push(
-            new Pizza(
-              clickX,
-              clickY,
-              Math.random() * 4 - 2,
-              Math.random() * 2,
-              40,
-              newImg
-            )
+            new Pizza(clickX, clickY, Math.random() * 4 - 2, Math.random() * 2, newImg)
           );
         };
       }
@@ -124,19 +121,25 @@ const PizzaCanvas: React.FC = () => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('orientationchange', updateGravity);
     };
   }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
+    const getPointerPos = (e: MouseEvent | TouchEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      const y = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+      return { x: x - rect.left, y: y - rect.top };
+    };
 
-    const handleMouseDown = (e: MouseEvent) => {
-      mouse.current.x = e.clientX;
-      mouse.current.y = e.clientY;
-
+    const handleDown = (e: MouseEvent | TouchEvent) => {
+      const { x, y } = getPointerPos(e);
+      mouse.current = { x, y };
       pizzasRef.current.forEach((pizza, i) => {
-        const dx = e.clientX - pizza.x;
-        const dy = e.clientY - pizza.y;
+        const dx = x - pizza.x;
+        const dy = y - pizza.y;
         if (Math.sqrt(dx * dx + dy * dy) < pizza.radius) {
           setGrabbedIndex(i);
           pizza.grabbed = true;
@@ -144,30 +147,36 @@ const PizzaCanvas: React.FC = () => {
       });
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.current.x = e.clientX;
-      mouse.current.y = e.clientY;
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const { x, y } = getPointerPos(e);
+      mouse.current = { x, y };
     };
 
-    const handleMouseUp = () => {
+    const handleUp = () => {
       if (grabbedIndex !== null) {
         pizzasRef.current[grabbedIndex].grabbed = false;
         setGrabbedIndex(null);
       }
     };
 
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousedown', handleDown);
+    canvas.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    canvas.addEventListener('touchstart', handleDown, { passive: false });
+    canvas.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleUp);
 
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mousedown', handleDown);
+      canvas.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      canvas.removeEventListener('touchstart', handleDown);
+      canvas.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleUp);
     };
   }, [grabbedIndex]);
 
-  return <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />;
+  return <canvas ref={canvasRef} style={{ background: '#fffbe0', touchAction: 'none' }} />;
 };
 
 export default PizzaCanvas;
