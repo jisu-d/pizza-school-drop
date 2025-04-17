@@ -1,3 +1,14 @@
+// Pizza.ts
+export interface Pizza {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  img: HTMLImageElement;
+  grabbed: boolean;
+}
+
 export class Pizza implements Pizza {
   x: number;
   y: number;
@@ -17,7 +28,7 @@ export class Pizza implements Pizza {
     this.grabbed = false;
   }
 
-  // 중력 및 물리 업데이트 메서드
+  // 중력 및 물리 업데이트
   update(gravity: { x: number; y: number }, canvasWidth: number, canvasHeight: number, bounce: number, friction: number) {
     if (!this.grabbed) {
       // 중력 적용
@@ -28,21 +39,21 @@ export class Pizza implements Pizza {
       this.x += this.vx;
       this.y += this.vy;
 
-      // 바닥 충돌 처리
+      // 바닥 충돌
       if (this.y + this.radius > canvasHeight) {
         this.y = canvasHeight - this.radius;
-        this.vy *= -bounce; // 튕김 효과
-        this.vx *= friction; // 마찰 적용
+        this.vy *= -bounce;
+        this.vx *= friction;
       }
 
-      // 천장 충돌 처리
+      // 천장 충돌
       if (this.y - this.radius < 0) {
         this.y = this.radius;
         this.vy *= -bounce;
         this.vx *= friction;
       }
 
-      // 좌우 벽 충돌 처리
+      // 좌우 벽 충돌
       if (this.x - this.radius < 0) {
         this.x = this.radius;
         this.vx *= -bounce;
@@ -61,7 +72,7 @@ export class Pizza implements Pizza {
     this.vy = 0;
   }
 
-  // 그리기 메서드
+  // 그리기
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.beginPath();

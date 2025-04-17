@@ -1,4 +1,4 @@
-import { Pizza } from '../types/Pizza';
+import { Pizza } from '../classes/Pizza';
 
 export function handleCollisions(pizzas: Pizza[]) {
   for (let i = 0; i < pizzas.length; i++) {
@@ -27,7 +27,7 @@ export function handleCollisions(pizzas: Pizza[]) {
 
         const normalX = dx / dist;
         const normalY = dy / dist;
-        const relativeVelocityX = b.vx - a.vx;
+        const relativeVelocityX = b.vx - a.vx; // 오타 수정
         const relativeVelocityY = b.vy - a.vy;
         const dotProduct = relativeVelocityX * normalX + relativeVelocityY * normalY;
 
