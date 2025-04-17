@@ -1,6 +1,4 @@
-import { Pizza as PizzaType } from '../types/Pizza';
-
-export default class Pizza implements PizzaType {
+export class Pizza implements Pizza {
   x: number;
   y: number;
   vx: number;
@@ -19,35 +17,51 @@ export default class Pizza implements PizzaType {
     this.grabbed = false;
   }
 
+  // 중력 및 물리 업데이트 메서드
   update(gravity: { x: number; y: number }, canvasWidth: number, canvasHeight: number, bounce: number, friction: number) {
     if (!this.grabbed) {
+      // 중력 적용
       this.vx += gravity.x;
       this.vy += gravity.y;
+
+      // 위치 업데이트
       this.x += this.vx;
       this.y += this.vy;
 
-      // 바닥 충돌
+      // 바닥 충돌 처리
       if (this.y + this.radius > canvasHeight) {
         this.y = canvasHeight - this.radius;
-        this.vy *= -bounce;
-        this.vx *= friction;
+        this.vy *= -bounce; // 튕김 효과
+        this.vx *= friction; // 마찰 적용
       }
 
-      // 천장 충돌
+      // 천장 충돌 처리
       if (this.y - this.radius < 0) {
         this.y = this.radius;
         this.vy *= -bounce;
         this.vx *= friction;
       }
 
-      // 좌우 충돌
-      if (this.x - this.radius < 0 || this.x + this.radius > canvasWidth) {
-        this.x = Math.max(this.radius, Math.min(this.x, canvasWidth - this.radius));
+      // 좌우 벽 충돌 처리
+      if (this.x - this.radius < 0) {
+        this.x = this.radius;
+        this.vx *= -bounce;
+      } else if (this.x + this.radius > canvasWidth) {
+        this.x = canvasWidth - this.radius;
         this.vx *= -bounce;
       }
     }
   }
 
+  // 위치 강제 설정 (잡혔을 때)
+  setPosition(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+  }
+
+  // 그리기 메서드
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.beginPath();
@@ -56,12 +70,5 @@ export default class Pizza implements PizzaType {
     ctx.clip();
     ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
     ctx.restore();
-  }
-
-  setPosition(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-    this.vx = 0;
-    this.vy = 0;
   }
 }

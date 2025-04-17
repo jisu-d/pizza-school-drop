@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Pizza from '../classes/Pizza';
+import {Pizza} from '../classes/Pizza';
 import { handleCollisions } from '../utils/handleCollisions';
 
 const BOUNCE = 0.99;
@@ -8,12 +8,11 @@ const FRICTION = 0.995;
 const PizzaCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pizzasRef = useRef<Pizza[]>([]);
-  const gravityRef = useRef({ x: 0, y: 0 });
+  const gravityRef = useRef({ x: 0, y: 0.25 }); // 초기 중력 설정
   const [grabbedIndex, setGrabbedIndex] = useState<number | null>(null);
   const hasMounted = useRef(false);
   const mouse = useRef({ x: 0, y: 0 });
   const logoInfo = useRef({ x: 0, y: 0, width: 0, height: 0 });
-  // ✅ 자이로센서 값 저장용 ref 추가
   const gyroValues = useRef({ gamma: 0, beta: 0 });
 
   const imageModules = import.meta.glob('../assets/pizza_imgs/*.{png,jpg,jpeg}', {
@@ -21,6 +20,18 @@ const PizzaCanvas: React.FC = () => {
   }) as Record<string, { default: string }>;
 
   const imageUrls = Object.values(imageModules).map((mod) => mod.default);
+
+  // 화면 회전 방지 (CSS로 처리)
+  useEffect(() => {
+    document.body.style.setProperty('orientation', 'portrait');
+    window.addEventListener('orientationchange', () => {
+      // 화면 방향 고정 로직 (필요 시 추가)
+      if (window.orientation !== 0) {
+        // 브라우저에 따라 화면 고정 요청
+        alert('Please keep the device in portrait mode.');
+      }
+    });
+  }, []);
 
   const requestDeviceOrientationPermission = () => {
     if (
@@ -35,7 +46,7 @@ const PizzaCanvas: React.FC = () => {
             window.addEventListener('deviceorientation', handleDeviceOrientation);
           } else {
             console.warn('Device orientation permission denied');
-            gravityRef.current = { x: 0, y: 0.25 };
+            gravityRef.current = { x: 0, y: 0.25 }; // 기본 중력
           }
         })
         .catch((error: Error) => {
@@ -48,20 +59,29 @@ const PizzaCanvas: React.FC = () => {
   };
 
   const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
-    const gamma = e.gamma ?? 0;
-    const beta = e.beta ?? 0;
+    const gamma = e.gamma ?? 0; // 좌우 기울기 (-90 ~ 90)
+    const beta = e.beta ?? 0;   // 앞뒤 기울기 (-180 ~ 180)
 
-    // ✅ 자이로센서 값 저장
     gyroValues.current = { gamma, beta };
 
-    const x = Math.sin((gamma * Math.PI) / 180);
-    let y = Math.sin((beta * Math.PI) / 180);
+    // 기울기를 중력 벡터로 변환
+    let x = Math.sin((gamma * Math.PI) / 180); // 좌우 중력
+    let y = Math.sin((beta * Math.PI) / 180);   // 상하 중력
 
+    // 흔들기 감지: 기울기가 임계값 이상일 때 중력 증폭
+    const shakeThreshold = 30; // 기울기 임계값
+    const shakeAmplifier = 1.5; // 흔들기 가속도 배율
+    if (Math.abs(gamma) > shakeThreshold || Math.abs(beta) > shakeThreshold) {
+      y *= shakeAmplifier;
+      x *= shakeAmplifier;
+    }
+
+    // 작은 기울기에서는 중력을 0으로 설정해 정지 상태 유지
     if (Math.abs(beta) < 10) {
       y = 0;
     }
 
-    gravityRef.current = { x: x * 0.8, y: y * 0.8 };
+    gravityRef.current = { x: x * 0.8, y: y * 0.8 }; // 중력 스케일링
   };
 
   useEffect(() => {
@@ -78,7 +98,7 @@ const PizzaCanvas: React.FC = () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    gravityRef.current = { x: 0, y: 0.25 };
+    gravityRef.current = { x: 0, y: 0.25 }; // 초기 중력
     requestDeviceOrientationPermission();
 
     if (hasMounted.current) return;
@@ -119,7 +139,7 @@ const PizzaCanvas: React.FC = () => {
         ctx.font = '10px Arial';
         ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
 
-        // ✅ 자이로센서 값과 중력 벡터 표시
+        // 자이로센서 및 중력 정보 표시
         ctx.fillStyle = 'black';
         ctx.font = '16px Arial';
         ctx.fillText(`Gyro: γ=${gyroValues.current.gamma.toFixed(1)}°, β=${gyroValues.current.beta.toFixed(1)}°`, 10, 40);
