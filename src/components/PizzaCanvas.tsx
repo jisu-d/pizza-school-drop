@@ -20,14 +20,52 @@ const PizzaCanvas: React.FC = () => {
 
   const imageUrls = Object.values(imageModules).map((mod) => mod.default);
 
-  const updateGravity = () => {
-    if (window.screen.orientation) {
-      const angle = window.screen.orientation.angle;
-      if (angle === 0) gravityRef.current = { x: 0, y: 0.25 };
-      else if (angle === 90) gravityRef.current = { x: -0.25, y: 0 };
-      else if (angle === 180) gravityRef.current = { x: 0, y: -0.25 };
-      else if (angle === 270) gravityRef.current = { x: 0.25, y: 0 };
+  // ✅ DeviceOrientation 권한 요청 (iOS Safari 대응)
+  const requestDeviceOrientationPermission = () => {
+    if (
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      // @ts-ignore
+      typeof DeviceOrientationEvent.requestPermission === 'function'
+    ) {
+      // @ts-ignore
+      DeviceOrientationEvent.requestPermission()
+        .then((permissionState: string) => {
+          if (permissionState === 'granted') {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+          } else {
+            console.warn('Device orientation permission denied');
+            // 기본 중력 설정
+            gravityRef.current = { x: 0, y: 0.25 };
+          }
+        })
+        .catch((error: Error) => {
+          console.error('Error requesting device orientation permission:', error);
+          gravityRef.current = { x: 0, y: 0.25 };
+        });
+    } else {
+      // 권한 요청이 필요 없는 경우 (Android 또는 데스크톱)
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
     }
+  };
+
+  // ✅ 기울기 감지 (중력 계산 개선)
+  const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
+    const gamma = e.gamma ?? 0; // 좌우 기울기 (-90 ~ 90도)
+    const beta = e.beta ?? 0; // 앞뒤 기울기 (-180 ~ 180도)
+
+    // gamma와 beta를 사용하여 중력 벡터 계산
+    // gamma: 좌우 기울기 -> x축 중력
+    // beta: 앞뒤 기울기 -> y축 중력
+    const x = Math.sin((gamma * Math.PI) / 180); // 좌우 기울기를 x축 중력으로 변환
+    let y = Math.sin((beta * Math.PI) / 180); // 앞뒤 기울기를 y축 중력으로 변환
+
+    // iOS에서 beta 값이 0도 근처일 때 부자연스러운 움직임을 방지
+    if (Math.abs(beta) < 10) {
+      y = 0; // 작은 기울기에서는 y축 중력을 0으로 설정
+    }
+
+    // 중력 크기 조정 (0.8은 중력의 강도를 조절)
+    gravityRef.current = { x: x * 0.8, y: y * 0.8 };
   };
 
   useEffect(() => {
@@ -43,22 +81,10 @@ const PizzaCanvas: React.FC = () => {
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', updateGravity);
-    updateGravity();
 
-    // ✅ 기울기 감지
-    const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
-      const gamma = e.gamma ?? 0; // 좌우
-      const beta = e.beta ?? 0; // 앞뒤
-
-      // 기울기를 정규화해서 x, y 중력 방향 계산
-      const x = Math.max(-90, Math.min(90, gamma)) / 90;
-      const y = Math.max(-90, Math.min(90, beta)) / 90;
-
-      gravityRef.current = { x: x * 0.8, y: y * 0.8 };
-    };
-
-    window.addEventListener('deviceorientation', handleDeviceOrientation);
+    // ✅ 최초 중력 설정 및 권한 요청
+    gravityRef.current = { x: 0, y: 0.25 }; // 기본 중력 (아래로)
+    requestDeviceOrientationPermission();
 
     if (hasMounted.current) return;
     hasMounted.current = true;
@@ -134,7 +160,6 @@ const PizzaCanvas: React.FC = () => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('orientationchange', updateGravity);
       window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
   }, []);
