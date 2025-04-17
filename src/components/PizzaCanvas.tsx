@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Pizza from '../classes/Pizza';
-import { Pizza as PizzaType } from '../types/Pizza';
 import { handleCollisions } from '../utils/handleCollisions';
 
 const BOUNCE = 0.99;

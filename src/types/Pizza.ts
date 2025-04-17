@@ -6,5 +6,5 @@ export interface Pizza {
     radius: number;
     img: HTMLImageElement;
     grabbed: boolean;
-}
+  }
   

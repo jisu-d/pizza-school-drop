@@ -1,4 +1,4 @@
-import { Pizza } from '../classes/Pizza';
+import { Pizza } from '../types/Pizza';
 
 export function handleCollisions(pizzas: Pizza[]) {
   for (let i = 0; i < pizzas.length; i++) {
