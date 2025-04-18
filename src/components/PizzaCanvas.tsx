@@ -20,7 +20,7 @@ const GRAVITY = 0.25;
 const BOUNCE = 0.99;
 const FRICTION = 0.995;
 
-const GYRO_SENSITIVITY = 0.5; // 자이로 데이터의 민감도 조정
+const GYRO_SENSITIVITY = 0.1; // 자이로 데이터의 민감도 조정
 
 const PizzaCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
