@@ -20,7 +20,7 @@ const GRAVITY = 0.25;
 const BOUNCE = 0.99;
 const FRICTION = 0.995;
 
-const GYRO_SENSITIVITY = 0.1; // 자이로 데이터의 민감도 조정
+const GYRO_SENSITIVITY = 0.05; // 자이로 데이터의 민감도 조정
 
 const getAdjustedGravity = (beta: number, gamma: number) => {
   const angle = window.screen.orientation?.angle || window.orientation || 0;
@@ -48,7 +48,7 @@ const getAdjustedGravity = (beta: number, gamma: number) => {
       break;
   }
 
-  return { ax, ay };
+  return { ax, ay: -ay };
 };
 
 
@@ -163,8 +163,6 @@ const PizzaCanvas: React.FC = () => {
           // 민감도 적용
           const adjustedAx = ax * GYRO_SENSITIVITY;
           const adjustedAy = ay * GYRO_SENSITIVITY;
-
-          
 
           pizzasRef.current.forEach((pizza) => {
             if (!pizza.grabbed) {
