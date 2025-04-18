@@ -10,9 +10,14 @@ interface Pizza {
   grabbed: boolean;
 }
 
-const GRAVITY = 0.25;
+interface GyroData {
+  beta: number; // X축 기울기 (앞뒤)
+  gamma: number; // Y축 기울기 (좌우)
+}
+
 const BOUNCE = 0.99;
 const FRICTION = 0.995;
+const GYRO_SENSITIVITY = 0.1; // 자이로 데이터의 민감도 조정
 
 const PizzaCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,15 +26,41 @@ const PizzaCanvas: React.FC = () => {
   const mouse = useRef({ x: 0, y: 0 });
   const hasMounted = useRef(false);
   const logoInfo = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  const [gyroData, setGyroData] = useState<GyroData>({ beta: 0, gamma: 0 });
+  const [hasPermission, setHasPermission] = useState<boolean>(false);
 
-  const imageModules = import.meta.glob('./assets/pizza_imgs/*.{png,jpg,jpeg}', {
+  const imageModules = import.meta.glob('../assets/pizza_imgs/*.{png,jpg,jpeg}', {
     eager: true,
   }) as Record<string, { default: string }>;
 
+  // 자이로스코프 권한 요청
+  const requestPermission = async () => {
+    if (
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof (DeviceOrientationEvent as any).requestPermission === 'function'
+    ) {
+      try {
+        const permissionState = await (DeviceOrientationEvent as any).requestPermission();
+        if (permissionState === 'granted') {
+          setHasPermission(true);
+        }
+      } catch (error) {
+        console.error('Permission error:', error);
+      }
+    } else {
+      setHasPermission(true); // Android 등 권한 없이 사용 가능
+    }
+  };
+
   useEffect(() => {
+    // 컴포넌트 마운트 시 권한 요청
+    if (!hasMounted.current) {
+      requestPermission();
+    }
+
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
-    
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -43,7 +74,6 @@ const PizzaCanvas: React.FC = () => {
 
     const logoImg = new Image();
     logoImg.src = '/pizza_school_logo.png';
-
 
     const imageUrls = Object.values(imageModules).map((mod) => mod.default);
 
@@ -89,21 +119,33 @@ const PizzaCanvas: React.FC = () => {
           ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
 
           ctx.font = '10px Arial';
-          ctx.fillStyle = 'black'; 
+          ctx.fillStyle = 'black';
           ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
+
+          // 자이로 데이터로 가속도 계산
+          const ax = gyroData.gamma * GYRO_SENSITIVITY; // 좌우 기울기 -> X축 가속도
+          const ay = gyroData.beta * GYRO_SENSITIVITY; // 앞뒤 기울기 -> Y축 가속도
 
           pizzasRef.current.forEach((pizza) => {
             if (!pizza.grabbed) {
-              pizza.vy += GRAVITY;
+              pizza.vx += ax; // 자이로 기반 X축 가속도
+              pizza.vy += ay; // 자이로 기반 Y축 가속도
               pizza.x += pizza.vx;
               pizza.y += pizza.vy;
 
+              // 바닥 충돌
               if (pizza.y + pizza.radius > canvas.height) {
                 pizza.y = canvas.height - pizza.radius;
                 pizza.vy *= -BOUNCE;
                 pizza.vx *= FRICTION;
               }
-
+              // 천장 충돌
+              if (pizza.y - pizza.radius < 0) {
+                pizza.y = pizza.radius;
+                pizza.vy *= -BOUNCE;
+                pizza.vx *= FRICTION;
+              }
+              // 좌우 벽 충돌
               if (pizza.x - pizza.radius < 0 || pizza.x + pizza.radius > canvas.width) {
                 pizza.x = Math.max(pizza.radius, Math.min(pizza.x, canvas.width - pizza.radius));
                 pizza.vx *= -BOUNCE;
@@ -134,6 +176,7 @@ const PizzaCanvas: React.FC = () => {
             ctx.restore();
           });
 
+          // 피자 간 충돌 처리
           for (let i = 0; i < pizzasRef.current.length; i++) {
             for (let j = i + 1; j < pizzasRef.current.length; j++) {
               const a = pizzasRef.current[i];
@@ -188,35 +231,26 @@ const PizzaCanvas: React.FC = () => {
       });
     };
 
-    canvas.addEventListener('click', (e: MouseEvent) => {
-      const { x, y, width, height } = logoInfo.current;
-      const rect = canvas.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const clickY = e.clientY - rect.top;
+    // 자이로스코프 이벤트 리스너
+    if (hasPermission) {
+      const handleOrientation = (event: DeviceOrientationEvent) => {
+        setGyroData({
+          beta: event.beta ?? 0,
+          gamma: event.gamma ?? 0,
+        });
+      };
 
-      if (clickX >= x && clickX <= x + width && clickY >= y && clickY <= y + height) {
-        const randomIndex = Math.floor(Math.random() * imageUrls.length);
-        const newImg = new Image();
-        newImg.src = imageUrls[randomIndex];
-        newImg.onload = () => {
-          pizzasRef.current.push({
-            x: clickX,
-            y: clickY,
-            vx: Math.random() * 4 - 2,
-            vy: Math.random() * 2,
-            radius: 40,
-            img: newImg,
-            grabbed: false,
-          });
-        };
-      }
-    });
+      window.addEventListener('deviceorientation', handleOrientation);
+      return () => {
+        window.removeEventListener('deviceorientation', handleOrientation);
+      };
+    }
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, []);
+  }, [hasPermission]);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -257,7 +291,26 @@ const PizzaCanvas: React.FC = () => {
     };
   }, [grabbedIndex]);
 
-  return <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />;
+  return (
+    <div>
+      {hasPermission && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            background: 'rgba(255, 255, 255, 0.8)',
+            padding: '10px',
+            borderRadius: '5px',
+          }}
+        >
+          <p>Beta (X-axis): {gyroData.beta.toFixed(2)}</p>
+          <p>Gamma (Y-axis): {gyroData.gamma.toFixed(2)}</p>
+        </div>
+      )}
+      <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />
+    </div>
+  );
 };
 
 export default PizzaCanvas;

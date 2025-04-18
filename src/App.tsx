@@ -1,7 +1,7 @@
 // App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import PizzaCanvas from './pages/PizzaCanvas';
-import Test from './pages/Test';
+import PizzaCanvas from './components/PizzaCanvas';
+import Test from './components/Test';
 
 function App() {
   return (
