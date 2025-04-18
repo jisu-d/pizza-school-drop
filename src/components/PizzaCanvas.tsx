@@ -48,7 +48,7 @@ const getAdjustedGravity = (beta: number, gamma: number) => {
       break;
   }
 
-  return { ax, ay: -ay };
+  return { ax: -ax, ay: -ay };
 };
 
 
