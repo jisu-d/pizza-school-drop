@@ -20,7 +20,7 @@ const GRAVITY = 0.25;
 const BOUNCE = 0.99;
 const FRICTION = 0.995;
 
-const GYRO_SENSITIVITY = 0.1; // 자이로 데이터의 민감도 조정
+const GYRO_SENSITIVITY = 0.5; // 자이로 데이터의 민감도 조정
 
 const PizzaCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,6 +31,7 @@ const PizzaCanvas: React.FC = () => {
   const logoInfo = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
   const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
+  const gyroRef = useRef<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
   const [hasPermission, setHasPermission] = useState<boolean>(false);
 
   const imageModules = import.meta.glob('../assets/pizza_imgs/*.{png,jpg,jpeg}', {
@@ -125,8 +126,8 @@ const PizzaCanvas: React.FC = () => {
           ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
 
           // 자이로 데이터로 가속도 계산
-          const ax = gyroData.gamma * GYRO_SENSITIVITY; // 좌우 기울기 -> X축 가속도
-          const ay = gyroData.beta * GYRO_SENSITIVITY; // 앞뒤 기울기 -> Y축 가속도
+          const ax = gyroRef.current.gamma * GYRO_SENSITIVITY;
+          const ay = gyroRef.current.beta * GYRO_SENSITIVITY;
 
           
 
@@ -301,12 +302,44 @@ const PizzaCanvas: React.FC = () => {
     };
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
-      setGyroData({
+      const newGyro = {
         alpha: event.alpha ?? 0,
         beta: event.beta ?? 0,
         gamma: event.gamma ?? 0,
+      };
+      setGyroData(newGyro);
+      gyroRef.current = newGyro; // <- 애니메이션에서 바로 참조 가능
+    };
+
+    // 터치 이벤트 핸들러
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      mouse.current.x = touch.clientX;
+      mouse.current.y = touch.clientY;
+
+      pizzasRef.current.forEach((pizza, i) => {
+        const dx = touch.clientX - pizza.x;
+        const dy = touch.clientY - pizza.y;
+        if (Math.sqrt(dx * dx + dy * dy) < pizza.radius) {
+          setGrabbedIndex(i);
+          pizza.grabbed = true;
+        }
       });
     };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      mouse.current.x = touch.clientX;
+      mouse.current.y = touch.clientY;
+    };
+
+    const handleTouchEnd = () => {
+      if (grabbedIndex !== null) {
+        pizzasRef.current[grabbedIndex].grabbed = false;
+        setGrabbedIndex(null);
+      }
+    };
+
 
     window.addEventListener('deviceorientation', handleOrientation);
 
@@ -314,11 +347,19 @@ const PizzaCanvas: React.FC = () => {
     canvas.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
 
+    canvas.addEventListener('touchstart', handleTouchStart);
+    canvas.addEventListener('touchmove', handleTouchMove);
+    canvas.addEventListener('touchend', handleTouchEnd);
+
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       window.addEventListener('deviceorientation', handleOrientation);
+
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
     };
   }, [grabbedIndex]);
 
