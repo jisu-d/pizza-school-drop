@@ -1,36 +1,64 @@
 import React, { useState, useEffect } from 'react';
 
+interface GyroData {
+  alpha: number;
+  beta: number;
+  gamma: number;
+}
+
 const Test: React.FC = () => {
-  // 자이로스코프 데이터를 저장할 state
-  const [gyroData, setGyroData] = useState({ alpha: 0, beta: 0, gamma: 0 });
+  const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
+  const [hasPermission, setHasPermission] = useState<boolean>(false);
+
+  const requestPermission = async () => {
+    if (
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof (DeviceOrientationEvent as any).requestPermission === 'function'
+    ) {
+      try {
+        const permissionState = await (DeviceOrientationEvent as any).requestPermission();
+        if (permissionState === 'granted') {
+          setHasPermission(true);
+        }
+      } catch (error) {
+        console.error('Permission error:', error);
+      }
+    } else {
+      // Android 등 permission 없이 사용 가능한 경우
+      setHasPermission(true);
+    }
+  };
 
   useEffect(() => {
-    // 100ms마다 자이로스코프 데이터를 업데이트
-    const interval = setInterval(() => {
-      if (window.DeviceOrientationEvent) {
-        // DeviceOrientationEvent를 통해 자이로스코프 값을 얻어옴
-        window.addEventListener('deviceorientation', (event) => {
-          setGyroData({
-            alpha: event.alpha ?? 0,
-            beta: event.beta ?? 0,
-            gamma: event.gamma ?? 0,
-          });
-        });
-      }
-      console.log(gyroData);
-      
-    }, 100); // 100ms 간격으로
+    if (!hasPermission) return;
 
-    // 컴포넌트가 unmount될 때 interval을 클리어
-    return () => clearInterval(interval);
-  }, []);
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      setGyroData({
+        alpha: event.alpha ?? 0,
+        beta: event.beta ?? 0,
+        gamma: event.gamma ?? 0,
+      });
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation);
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+    };
+  }, [hasPermission]);
 
   return (
     <div>
       <h1>Gyroscope Data</h1>
-      <p>Alpha (Z-axis): {gyroData.alpha}</p>
-      <p>Beta (X-axis): {gyroData.beta}</p>
-      <p>Gamma (Y-axis): {gyroData.gamma}</p>
+      {!hasPermission ? (
+        <button onClick={requestPermission}>자이로센서 사용 허용</button>
+      ) : (
+        <div>
+          <p>Alpha (Z-axis): {gyroData.alpha.toFixed(2)}</p>
+          <p>Beta (X-axis): {gyroData.beta.toFixed(2)}</p>
+          <p>Gamma (Y-axis): {gyroData.gamma.toFixed(2)}</p>
+        </div>
+      )}
     </div>
   );
 };
