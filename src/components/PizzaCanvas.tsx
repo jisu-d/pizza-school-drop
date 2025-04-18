@@ -22,6 +22,36 @@ const FRICTION = 0.995;
 
 const GYRO_SENSITIVITY = 0.1; // 자이로 데이터의 민감도 조정
 
+const getAdjustedGravity = (beta: number, gamma: number) => {
+  const angle = window.screen.orientation?.angle || window.orientation || 0;
+
+  let ax = gamma;
+  let ay = beta;
+
+  switch (angle) {
+    case 0:
+      ax = gamma;
+      ay = beta;
+      break;
+    case 90:
+      ax = -beta;
+      ay = gamma;
+      break;
+    case 180:
+      ax = -gamma;
+      ay = -beta;
+      break;
+    case -90:
+    case 270:
+      ax = beta;
+      ay = -gamma;
+      break;
+  }
+
+  return { ax, ay };
+};
+
+
 const PizzaCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pizzasRef = useRef<Pizza[]>([]);
@@ -125,16 +155,21 @@ const PizzaCanvas: React.FC = () => {
           ctx.fillStyle = 'black'; 
           ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
 
-          // 자이로 데이터로 가속도 계산
-          const ax = gyroRef.current.gamma * GYRO_SENSITIVITY;
-          const ay = gyroRef.current.beta * GYRO_SENSITIVITY;
+          const { ax, ay } = getAdjustedGravity(
+            gyroRef.current.beta,
+            gyroRef.current.gamma
+          );
+          
+          // 민감도 적용
+          const adjustedAx = ax * GYRO_SENSITIVITY;
+          const adjustedAy = ay * GYRO_SENSITIVITY;
 
           
 
           pizzasRef.current.forEach((pizza) => {
             if (!pizza.grabbed) {
-              pizza.vx += ax; // 자이로 기반 X축 가속도
-              pizza.vy += ay; // 자이로 기반 Y축 가속도
+              pizza.vx += adjustedAx;
+              pizza.vy += adjustedAy;
               
               pizza.vy += GRAVITY;
               pizza.x += pizza.vx;
