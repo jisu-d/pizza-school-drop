@@ -59,9 +59,9 @@ const PizzaCanvas: React.FC = () => {
   const hasMounted = useRef(false);
   const logoInfo = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
-  const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
+  // const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
   const gyroRef = useRef<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
-  const [hasPermission, setHasPermission] = useState<boolean>(false);
+  // const [hasPermission, setHasPermission] = useState<boolean>(false);
 
   const imageModules = import.meta.glob('../assets/pizza_imgs/*.{png,jpg,jpeg}', {
     eager: true,
@@ -74,15 +74,15 @@ const PizzaCanvas: React.FC = () => {
     ) {
       try {
         const permissionState = await (DeviceOrientationEvent as any).requestPermission();
-        if (permissionState === 'granted') {
-          setHasPermission(true);
-        }
+        // if (permissionState === 'granted') {
+        //   setHasPermission(true);
+        // }
       } catch (error) {
         console.error('Permission error:', error);
       }
     } else {
       // Android 등 permission 없이 사용 가능한 경우
-      setHasPermission(true);
+      // setHasPermission(true);
     }
   };
 
@@ -339,7 +339,7 @@ const PizzaCanvas: React.FC = () => {
         beta: event.beta ?? 0,
         gamma: event.gamma ?? 0,
       };
-      setGyroData(newGyro);
+      // setGyroData(newGyro);
       gyroRef.current = newGyro; // <- 애니메이션에서 바로 참조 가능
     };
 
@@ -405,7 +405,7 @@ const PizzaCanvas: React.FC = () => {
 
   return (
     <div>
-      {hasPermission && (
+      {/* {hasPermission && (
         <div
           style={{
             position: 'absolute',
@@ -419,7 +419,7 @@ const PizzaCanvas: React.FC = () => {
           <p>Beta (X-axis): {gyroData.beta.toFixed(2)}</p>
           <p>Gamma (Y-axis): {gyroData.gamma.toFixed(2)}</p>
         </div>
-      )}
+      )} */}
       <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />
     </div>
   )
