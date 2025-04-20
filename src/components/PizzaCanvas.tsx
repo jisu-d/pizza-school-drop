@@ -373,13 +373,13 @@ const PizzaCanvas: React.FC = () => {
       }
     };
 
-    const preventPullToRefresh = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
+    // const preventPullToRefresh = (e: TouchEvent) => {
+    //   if (e.touches.length !== 1) return;
   
-      if (window.scrollY === 0 && e.touches[0].clientY > 0) {
-        e.preventDefault();
-      }
-    };
+    //   if (window.scrollY === 0 && e.touches[0].clientY > 0) {
+    //     e.preventDefault();
+    //   }
+    // };
 
 
     window.addEventListener('deviceorientation', handleOrientation);
