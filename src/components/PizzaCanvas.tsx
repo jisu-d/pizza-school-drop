@@ -361,6 +361,11 @@ const PizzaCanvas: React.FC = () => {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+
+      if (window.scrollY === 0 && e.touches[0].clientY > 0) {
+        e.preventDefault();
+      }
       const touch = e.touches[0];
       mouse.current.x = touch.clientX;
       mouse.current.y = touch.clientY;
