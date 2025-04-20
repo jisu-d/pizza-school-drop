@@ -40,10 +40,10 @@ const getAdjustedGravity = (beta: number, gamma: number) => {
   }
 
   // 가로 모드에서 반전된 값을 복구
-  if (window.innerWidth > window.innerHeight) {
-    ax = -ax;
-    ay = -ay;
-  }
+  // if (window.innerWidth > window.innerHeight) {
+  //   ax = -ax;
+  //   ay = -ay;
+  // }
 
   // 값을 반환 (각각 부호 반전)
   return { ax: ax, ay: ay };
