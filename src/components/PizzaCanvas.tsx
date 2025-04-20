@@ -23,33 +23,32 @@ const FRICTION = 0.995;
 const GYRO_SENSITIVITY = 0.05; // 자이로 데이터의 민감도 조정
 
 const getAdjustedGravity = (beta: number, gamma: number) => {
-  const angle = window.screen.orientation?.angle || window.orientation || 0;
-
+  const angle = window.orientation || 0;  // 화면 회전 각도 가져오기 (세로, 가로 모드)
+  
   let ax = gamma;
   let ay = beta;
 
-  switch (angle) {
-    case 0:
-      ax = gamma;
-      ay = beta;
-      break;
-    case 90:
-      ax = -beta;
-      ay = gamma;
-      break;
-    case 180:
-      ax = -gamma;
-      ay = -beta;
-      break;
-    case -90:
-    case 270:
-      ax = beta;
-      ay = -gamma;
-      break;
+  // 세로 모드일 때
+  if (angle === 0 || angle === 180) {
+    ax = gamma;
+    ay = beta;
+  } 
+  // 가로 모드일 때 (90도 또는 -90도 회전)
+  else if (angle === 90 || angle === -90) {
+    ax = -beta;  // 가로 모드에서는 gamma와 beta를 반대로 처리
+    ay = gamma;
   }
 
+  // 가로 모드에서 반전된 값을 복구
+  if (window.innerWidth > window.innerHeight) {
+    ax = -ax;
+    ay = -ay;
+  }
+
+  // 값을 반환 (각각 부호 반전)
   return { ax: -ax, ay: -ay };
 };
+
 
 
 const PizzaCanvas: React.FC = () => {
@@ -378,14 +377,6 @@ const PizzaCanvas: React.FC = () => {
       }
     };
 
-    // const preventPullToRefresh = (e: TouchEvent) => {
-    //   if (e.touches.length !== 1) return;
-  
-    //   if (window.scrollY === 0 && e.touches[0].clientY > 0) {
-    //     e.preventDefault();
-    //   }
-    // };
-
 
     window.addEventListener('deviceorientation', handleOrientation);
 
@@ -394,11 +385,10 @@ const PizzaCanvas: React.FC = () => {
     window.addEventListener('mouseup', handleMouseUp);
 
     canvas.addEventListener('touchstart', handleTouchStart);
-    // canvas.addEventListener('touchmove', handleTouchMove);
     canvas.addEventListener('touchend', handleTouchEnd);
 
     document.addEventListener('touchmove', handleTouchMove, {
-      passive: false, // 중요!
+      passive: false,
     });
 
     return () => {
@@ -408,7 +398,7 @@ const PizzaCanvas: React.FC = () => {
       window.addEventListener('deviceorientation', handleOrientation);
 
       canvas.removeEventListener('touchstart', handleTouchStart);
-      // canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchmove', handleTouchMove);
       canvas.removeEventListener('touchend', handleTouchMove);
     };
   }, [grabbedIndex]);
