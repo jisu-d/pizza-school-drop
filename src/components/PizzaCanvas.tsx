@@ -405,21 +405,6 @@ const PizzaCanvas: React.FC = () => {
 
   return (
     <div>
-      {hasPermission && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            background: 'rgba(255, 255, 255, 0.8)',
-            padding: '10px',
-            borderRadius: '5px',
-          }}
-        >
-          <p>Beta (X-axis): {gyroData.beta.toFixed(2)}</p>
-          <p>Gamma (Y-axis): {gyroData.gamma.toFixed(2)}</p>
-        </div>
-      )}
       <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />
     </div>
   )
