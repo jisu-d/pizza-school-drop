@@ -73,7 +73,7 @@ const PizzaCanvas: React.FC = () => {
       typeof (DeviceOrientationEvent as any).requestPermission === 'function'
     ) {
       try {
-        const permissionState = await (DeviceOrientationEvent as any).requestPermission();
+        // const permissionState = await (DeviceOrientationEvent as any).requestPermission();
         // if (permissionState === 'granted') {
         //   setHasPermission(true);
         // }
