@@ -34,10 +34,10 @@ const getAdjustedGravity = (beta: number, gamma: number) => {
     ay = beta;
   } 
   // 가로 모드일 때 (90도 또는 -90도 회전)
-  // else if (angle === 90 || angle === -90) {
-  //   ax = -beta;  // 가로 모드에서는 gamma와 beta를 반대로 처리
-  //   ay = gamma;
-  // }
+  else if (angle === 90 || angle === -90) {
+    ax = -beta;  // 가로 모드에서는 gamma와 beta를 반대로 처리
+    ay = gamma;
+  }
 
   // 가로 모드에서 반전된 값을 복구
   if (window.innerWidth > window.innerHeight) {
@@ -59,9 +59,9 @@ const PizzaCanvas: React.FC = () => {
   const hasMounted = useRef(false);
   const logoInfo = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
-  // const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
+  const [gyroData, setGyroData] = useState<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
   const gyroRef = useRef<GyroData>({ alpha: 0, beta: 0, gamma: 0 });
-  // const [hasPermission, setHasPermission] = useState<boolean>(false);
+  const [hasPermission, setHasPermission] = useState<boolean>(false);
 
   const imageModules = import.meta.glob('../assets/pizza_imgs/*.{png,jpg,jpeg}', {
     eager: true,
@@ -73,16 +73,16 @@ const PizzaCanvas: React.FC = () => {
       typeof (DeviceOrientationEvent as any).requestPermission === 'function'
     ) {
       try {
-        // const permissionState = await (DeviceOrientationEvent as any).requestPermission();
-        // if (permissionState === 'granted') {
-        //   setHasPermission(true);
-        // }
+        const permissionState = await (DeviceOrientationEvent as any).requestPermission();
+        if (permissionState === 'granted') {
+          setHasPermission(true);
+        }
       } catch (error) {
         console.error('Permission error:', error);
       }
     } else {
       // Android 등 permission 없이 사용 가능한 경우
-      // setHasPermission(true);
+      setHasPermission(true);
     }
   };
 
@@ -339,7 +339,7 @@ const PizzaCanvas: React.FC = () => {
         beta: event.beta ?? 0,
         gamma: event.gamma ?? 0,
       };
-      // setGyroData(newGyro); 
+      setGyroData(newGyro);
       gyroRef.current = newGyro; // <- 애니메이션에서 바로 참조 가능
     };
 
@@ -405,6 +405,21 @@ const PizzaCanvas: React.FC = () => {
 
   return (
     <div>
+      {hasPermission && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            background: 'rgba(255, 255, 255, 0.8)',
+            padding: '10px',
+            borderRadius: '5px',
+          }}
+        >
+          <p>Beta (X-axis): {gyroData.beta.toFixed(2)}</p>
+          <p>Gamma (Y-axis): {gyroData.gamma.toFixed(2)}</p>
+        </div>
+      )}
       <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />
     </div>
   )
