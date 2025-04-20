@@ -373,6 +373,14 @@ const PizzaCanvas: React.FC = () => {
       }
     };
 
+    const preventPullToRefresh = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+  
+      if (window.scrollY === 0 && e.touches[0].clientY > 0) {
+        e.preventDefault();
+      }
+    };
+
 
     window.addEventListener('deviceorientation', handleOrientation);
 
@@ -381,8 +389,12 @@ const PizzaCanvas: React.FC = () => {
     window.addEventListener('mouseup', handleMouseUp);
 
     canvas.addEventListener('touchstart', handleTouchStart);
-    canvas.addEventListener('touchmove', handleTouchMove);
+    // canvas.addEventListener('touchmove', handleTouchMove);
     canvas.addEventListener('touchend', handleTouchEnd);
+
+    document.addEventListener('touchmove', handleTouchMove, {
+      passive: false, // 중요!
+    });
 
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
@@ -391,7 +403,7 @@ const PizzaCanvas: React.FC = () => {
       window.addEventListener('deviceorientation', handleOrientation);
 
       canvas.removeEventListener('touchstart', handleTouchStart);
-      canvas.removeEventListener('touchmove', handleTouchMove);
+      // canvas.removeEventListener('touchmove', handleTouchMove);
       canvas.removeEventListener('touchend', handleTouchEnd);
     };
   }, [grabbedIndex]);
