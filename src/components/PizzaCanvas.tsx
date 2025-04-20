@@ -168,7 +168,9 @@ const PizzaCanvas: React.FC = () => {
               pizza.vx += adjustedAx;
               pizza.vy += adjustedAy;
               
-              pizza.vy += GRAVITY;
+              if(ax == 0 && ay == 0){
+                pizza.vy += GRAVITY;
+              }
               pizza.x += pizza.vx;
               pizza.y += pizza.vy;
 
