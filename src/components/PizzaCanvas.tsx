@@ -46,7 +46,7 @@ const getAdjustedGravity = (beta: number, gamma: number) => {
   }
 
   // 값을 반환 (각각 부호 반전)
-  return { ax: -ax, ay: -ay };
+  return { ax: ax, ay: ay };
 };
 
 
