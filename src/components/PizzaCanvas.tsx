@@ -404,7 +404,7 @@ const PizzaCanvas: React.FC = () => {
 
       canvas.removeEventListener('touchstart', handleTouchStart);
       // canvas.removeEventListener('touchmove', handleTouchMove);
-      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchend', handleTouchMove);
     };
   }, [grabbedIndex]);
 
