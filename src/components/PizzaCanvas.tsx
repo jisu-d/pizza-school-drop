@@ -77,6 +77,8 @@ const PizzaCanvas: React.FC = () => {
     if (hasMounted.current) return;
     hasMounted.current = true;
 
+
+    alert(isMobileDevice())
     if (isMobileDevice()) {
       requestPermission();
     }
