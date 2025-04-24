@@ -51,6 +51,10 @@ const PizzaCanvas: React.FC = () => {
         const permissionState = await (DeviceOrientationEvent as any).requestPermission();
         if (permissionState === 'granted') {
           setHasPermission(true);
+          alert('성ㅇ공야')
+          
+        } else{
+          alert('실패여')
         }
       } catch (error) {
         console.error('Permission error:', error);
@@ -58,7 +62,8 @@ const PizzaCanvas: React.FC = () => {
     } else {
       setHasPermission(true);
     }
-  };
+  }; 
+  // x 3 y 63 z -773
 
   useEffect(() => {
     // if (!hasPermission) return;
