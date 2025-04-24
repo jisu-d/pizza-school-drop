@@ -61,7 +61,7 @@ const PizzaCanvas: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!hasPermission) return;
+    // if (!hasPermission) return;
 
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
