@@ -345,6 +345,7 @@ const PizzaCanvas: React.FC = () => {
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       if (!isMobileDevice()) return;
+      alert(event.alpha)
       gyroRef.current = {
         alpha: event.alpha ?? 0,
         beta: event.beta ?? 0,
