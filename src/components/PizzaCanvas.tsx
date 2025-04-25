@@ -82,11 +82,9 @@ const PizzaCanvas: React.FC = () => {
     if (hasMounted.current) return;
     hasMounted.current = true;
 
-
-    alert(isMobileDevice())
-    if (isMobileDevice()) {
-      requestPermission();
-    }
+    // if (isMobileDevice()) {
+    //   requestPermission();
+    // }
 
     const imageUrls = Object.values(imageModules).map((mod) => mod.default);
 
@@ -412,7 +410,7 @@ const PizzaCanvas: React.FC = () => {
 
   return (
     <div>
-      <canvas ref={canvasRef} style={{ background: '#fffbe0' }} />
+      <canvas ref={canvasRef} onClick={requestPermission} style={{ background: '#fffbe0' }} />
     </div>
   );
 };
