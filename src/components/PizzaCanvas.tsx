@@ -58,6 +58,7 @@ const PizzaCanvas: React.FC = () => {
         } 
       } catch (error) {
         console.error('Permission error:', error);
+        alert('실패여2')
       }
     } else {
       setHasPermission(true);
