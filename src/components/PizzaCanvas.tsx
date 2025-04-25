@@ -154,13 +154,11 @@ const PizzaCanvas: React.FC = () => {
         ctx.fillText('Image Source: http://pizzaschool.net/menu/', 10, 20);
 
 
-        if (hasPermission && isMobileDevice()) {
-          ctx.font = '12px Arial';
-          ctx.fillStyle = 'blue';
-          ctx.fillText(`Alpha: ${gyroRef.current.alpha.toFixed(2)}`, 10, 40);
-          ctx.fillText(`Beta: ${gyroRef.current.beta.toFixed(2)}`, 10, 60);
-          ctx.fillText(`Gamma: ${gyroRef.current.gamma.toFixed(2)}`, 10, 80);
-        }
+        ctx.font = '12px Arial';
+        ctx.fillStyle = 'blue';
+        ctx.fillText(`Alpha: ${gyroRef.current.alpha.toFixed(2)}`, 10, 40);
+        ctx.fillText(`Beta: ${gyroRef.current.beta.toFixed(2)}`, 10, 60);
+        ctx.fillText(`Gamma: ${gyroRef.current.gamma.toFixed(2)}`, 10, 80);
 
         // const { ax, ay } = getAdjustedGravity(gyroRef.current.beta, gyroRef.current.gamma);
         let adjustedAx = 0;
