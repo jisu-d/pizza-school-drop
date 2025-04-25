@@ -4,7 +4,7 @@ import type { Pizza, GyroData } from '../types/Pizza';
 const GRAVITY = 0.9;
 const BOUNCE = 0.99;
 const FRICTION = 0.995;
-const GYRO_SENSITIVITY = 0.1;
+const GYRO_SENSITIVITY = 0.9;
 
 const isMobileDevice = () => {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -410,7 +410,10 @@ const PizzaCanvas: React.FC = () => {
 
   return (
     <div>
-      <canvas ref={canvasRef} onClick={requestPermission} style={{ background: '#fffbe0' }} />
+      <canvas ref={canvasRef} 
+        onClick={() => {isMobileDevice() ? requestPermission(): console.log('모바일아님');
+        }} 
+        style={{ background: '#fffbe0' }} />
     </div>
   );
 };
